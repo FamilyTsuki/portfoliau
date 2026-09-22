@@ -60,11 +60,6 @@ export function GameCanvas({ state, width, height }: GameCanvasProps) {
     const centerX = runner.x + size / 2;
     const bottomY = runner.y + size;
 
-    ctx.save();
-    ctx.translate(centerX, bottomY);
-    ctx.scale(runner.scaleX, runner.scaleY);
-    ctx.translate(-centerX, -bottomY);
-
     const facing = runner.facing;
 
     if (PLAYER_SPRITE_CONFIG.useCustomSpritesheet && spriteImageRef.current) {
@@ -74,8 +69,14 @@ export function GameCanvas({ state, width, height }: GameCanvasProps) {
       const fh = PLAYER_SPRITE_CONFIG.frameHeight;
       const sx = runner.frameIndex * fw;
       const sy = clip.row * fh;
+      const scale = PLAYER_SPRITE_CONFIG.renderScale;
+      const destW = fw * scale;
+      const destH = fh * scale;
+      const destAnchorX = PLAYER_SPRITE_CONFIG.anchorX * scale;
+      const destBaselineY = PLAYER_SPRITE_CONFIG.baselineY * scale;
 
       ctx.save();
+      ctx.imageSmoothingEnabled = true;
       ctx.translate(centerX, bottomY);
       if (facing === -1) ctx.scale(-1, 1);
       ctx.drawImage(
@@ -84,14 +85,18 @@ export function GameCanvas({ state, width, height }: GameCanvasProps) {
         sy,
         fw,
         fh,
-        -size / 2,
-        -size,
-        size,
-        size,
+        -destAnchorX,
+        -destBaselineY,
+        destW,
+        destH,
       );
       ctx.restore();
     } else {
       // Rendu minimaliste articulé (en attendant la planche tradi)
+      ctx.save();
+      ctx.translate(centerX, bottomY);
+      ctx.scale(runner.scaleX, runner.scaleY);
+      ctx.translate(-centerX, -bottomY);
       const rx = runner.x;
       const ry = runner.y;
 

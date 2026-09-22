@@ -214,9 +214,9 @@ export const tickPhysics = (
     justLanded,
     nextVx,
     nextVy,
-    runner.action,
-    runner.frameIndex,
-    runner.frameTimer,
+    didJump ? "jump" : runner.action,
+    didJump ? 0 : runner.frameIndex,
+    didJump ? 0 : runner.frameTimer,
     dt,
   );
 

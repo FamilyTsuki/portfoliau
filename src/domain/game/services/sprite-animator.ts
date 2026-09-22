@@ -23,10 +23,26 @@ export function updateSpriteAnimation(
   if (justLanded) {
     targetAction = "land";
   } else if (!isGrounded) {
-    targetAction = velocityY < -60 ? "jump" : "fall";
+    if (currentAction === "jump") {
+      // Allow jump ascension to complete its keyframes or reach apex
+      if (
+        currentFrameIndex < PLAYER_SPRITE_CONFIG.clips.jump.frameCount - 1 &&
+        velocityY < 60
+      ) {
+        targetAction = "jump";
+      } else {
+        targetAction = "fall";
+      }
+    } else {
+      // In air: if rising sharply (e.g. jump started), play jump; otherwise fall
+      targetAction = velocityY < -60 ? "jump" : "fall";
+    }
   } else {
-    // Grounded
-    if (currentAction === "land" && currentFrameTimer < 0.12) {
+    // Grounded: play landing recovery to completion before running or idling
+    if (
+      currentAction === "land" &&
+      currentFrameIndex < PLAYER_SPRITE_CONFIG.clips.land.frameCount - 1
+    ) {
       targetAction = "land";
     } else if (Math.abs(velocityX) > 15) {
       targetAction = "run";
