@@ -76,7 +76,7 @@ export function GameCanvas({ state, width, height }: GameCanvasProps) {
       const destBaselineY = PLAYER_SPRITE_CONFIG.baselineY * scale;
 
       ctx.save();
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       ctx.translate(centerX, bottomY);
       if (facing === -1) ctx.scale(-1, 1);
       ctx.drawImage(
