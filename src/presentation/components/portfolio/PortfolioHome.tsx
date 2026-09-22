@@ -1,68 +1,85 @@
-import type { Project } from "@/domain/portfolio/entities/project";
-import { RunnerMiniGame } from "@/presentation/components/game/RunnerMiniGame";
+import type { Profile, Project } from "@/domain/portfolio/entities/project";
 
 interface PortfolioHomeProps {
+  profile: Profile;
   projects: readonly Project[];
+  onSelectProject: (project: Project) => void;
 }
 
-export function PortfolioHome({ projects }: PortfolioHomeProps) {
+export function PortfolioHome({
+  profile,
+  projects,
+  onSelectProject,
+}: PortfolioHomeProps) {
   return (
-    <main>
-      <nav className="site-nav" aria-label="Navigation principale">
-        <span className="brand">A / portfolio</span>
-        <div className="site-nav__links">
-          <a href="#projets">Projets</a>
-          <a href="#a-propos">À propos</a>
-          <a href="#contact">Contact</a>
-        </div>
-      </nav>
-
-      <section className="hero" id="a-propos">
-        <p className="eyebrow">
-          Designer développeur indépendant · Paris / partout
-        </p>
-        <h1>
-          Je fabrique des expériences numériques qui donnent envie
-          d&apos;avancer.
-        </h1>
-        <div className="hero__footer">
-          <p>
-            Identités, interfaces et produits web avec une attention
-            particulière pour les détails qui font rester.
-          </p>
-          <span className="hero__mark">01 / 04</span>
-        </div>
+    <div className="portfolio-content">
+      {/* 01 // HERO */}
+      <section
+        id="hero"
+        className="section hero platform-card platform-card--hero"
+        data-platform="true"
+      >
+        <h1 className="hero__title">{profile.name} — Développeur</h1>
+        <p className="hero__bio">{profile.bio}</p>
       </section>
 
-      <section className="work" id="projets">
-        <div className="section-heading">
-          <p className="eyebrow">Sélection récente</p>
-          <p className="section-heading__count">{projects.length} projets</p>
+      {/* 02 // PROJETS */}
+      <section id="projets" className="section projects">
+        <div className="section__header">
+          <h2 className="section__title">Projets</h2>
         </div>
-        <div className="project-list">
+
+        <div className="projects__list">
           {projects.map((project, index) => (
-            <article className="project-row" key={project.id}>
-              <span className="project-row__number">0{index + 1}</span>
-              <div className="project-row__main">
-                <h2>{project.title}</h2>
-                <p>{project.description}</p>
+            <article
+              key={project.id}
+              id={`project-${project.id}`}
+              className={`project-card platform-card project-card--${index % 2 === 0 ? "left" : "right"}`}
+              data-platform="true"
+              onClick={() => onSelectProject(project)}
+            >
+              <div className="project-card__top">
+                <h3 className="project-card__title">{project.title}</h3>
+                <span className="project-card__year">{project.year}</span>
               </div>
-              <div className="project-row__meta">
-                <span>{project.technologies.join(" · ")}</span>
-                <span>{project.year}</span>
+
+              <p className="project-card__desc">{project.description}</p>
+
+              <div className="project-card__tags">
+                {project.technologies.map((tech) => (
+                  <span key={tech} className="tech-tag">
+                    {tech}
+                  </span>
+                ))}
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      <RunnerMiniGame />
+      {/* 03 // CONTACT */}
+      <footer
+        id="contact"
+        className="section contact platform-card platform-card--contact"
+        data-platform="true"
+      >
+        <div className="section__header">
+          <h2 className="section__title">Contact</h2>
+        </div>
 
-      <footer className="site-footer" id="contact">
-        <p className="eyebrow">Un projet en tête ?</p>
-        <a href="mailto:hello@example.com">hello@example.com ↗</a>
-        <span>© 2026 — A.</span>
+        <a href={`mailto:${profile.email}`} className="contact__email">
+          {profile.email} ↗
+        </a>
+
+        <div className="contact__links">
+          <a href={profile.github} target="_blank" rel="noopener noreferrer">
+            GitHub ↗
+          </a>
+          <a href={profile.linkedin} target="_blank" rel="noopener noreferrer">
+            LinkedIn ↗
+          </a>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }
