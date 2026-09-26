@@ -1,11 +1,10 @@
-import type { PlayerAction } from "@/domain/game/entities/runner";
+import {
+  PLAYER_ANIMATION_CLIPS,
+  type PlayerAction,
+  type SpriteClip,
+} from "@/domain/game/entities/runner";
 
-export interface ClipConfig {
-  readonly row: number;
-  readonly frameCount: number;
-  readonly fps: number;
-  readonly loop: boolean;
-}
+export type ClipConfig = SpriteClip;
 
 export interface PlayerSpriteConfig {
   readonly useCustomSpritesheet: boolean;
@@ -15,7 +14,7 @@ export interface PlayerSpriteConfig {
   readonly baselineY: number;
   readonly anchorX: number;
   readonly renderScale: number;
-  readonly clips: Record<PlayerAction, ClipConfig>;
+  readonly clips: Record<PlayerAction, SpriteClip>;
 }
 
 export const PLAYER_SPRITE_CONFIG: PlayerSpriteConfig = {
@@ -26,11 +25,5 @@ export const PLAYER_SPRITE_CONFIG: PlayerSpriteConfig = {
   baselineY: 112,
   anchorX: 64,
   renderScale: 0.5,
-  clips: {
-    idle: { row: 0, frameCount: 8, fps: 8, loop: true },
-    run: { row: 1, frameCount: 10, fps: 12, loop: true },
-    jump: { row: 2, frameCount: 4, fps: 8, loop: false },
-    fall: { row: 3, frameCount: 4, fps: 8, loop: true },
-    land: { row: 4, frameCount: 4, fps: 12, loop: false },
-  },
+  clips: PLAYER_ANIMATION_CLIPS,
 };

@@ -46,6 +46,21 @@ export interface GameState {
   readonly particles: readonly Particle[];
 }
 
+export interface SpriteClip {
+  readonly row: number;
+  readonly frameCount: number;
+  readonly fps: number;
+  readonly loop: boolean;
+}
+
+export const PLAYER_ANIMATION_CLIPS: Record<PlayerAction, SpriteClip> = {
+  idle: { row: 0, frameCount: 8, fps: 8, loop: true },
+  run: { row: 1, frameCount: 10, fps: 12, loop: true },
+  jump: { row: 2, frameCount: 4, fps: 8, loop: false },
+  fall: { row: 3, frameCount: 4, fps: 8, loop: true },
+  land: { row: 4, frameCount: 4, fps: 12, loop: false },
+};
+
 export const GAME_CONSTANTS = {
   playerSize: 34,
   walkSpeed: 320,
@@ -54,6 +69,7 @@ export const GAME_CONSTANTS = {
   gravity: 1500,
   jumpSpeed: -650,
   maxFallSpeed: 950,
+  maxJumps: 2,
   coyoteDuration: 0.12,
   jumpBufferDuration: 0.15,
   startX: 80,

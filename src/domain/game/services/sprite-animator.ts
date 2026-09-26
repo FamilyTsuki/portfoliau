@@ -1,5 +1,8 @@
-import type { PlayerAction } from "../entities/runner";
-import { PLAYER_SPRITE_CONFIG } from "@/infrastructure/game/player-sprite-config";
+import {
+  PLAYER_ANIMATION_CLIPS,
+  type PlayerAction,
+  type SpriteClip,
+} from "../entities/runner";
 
 export interface AnimationUpdateResult {
   readonly action: PlayerAction;
@@ -7,6 +10,11 @@ export interface AnimationUpdateResult {
   readonly frameTimer: number;
 }
 
+/**
+ * Machine à états d'animation du joueur :
+ * Détermine l'action appropriée (idle, run, jump, fall, land)
+ * et avance le timer de frame selon le taux de rafraîchissement (fps) du clip.
+ */
 export function updateSpriteAnimation(
   isGrounded: boolean,
   justLanded: boolean,
@@ -16,33 +24,30 @@ export function updateSpriteAnimation(
   currentFrameIndex: number,
   currentFrameTimer: number,
   deltaSeconds: number,
+  clips: Record<PlayerAction, SpriteClip> = PLAYER_ANIMATION_CLIPS,
 ): AnimationUpdateResult {
-  // 1. Determine target action based on physical state
+  // 1. Détermination de l'action cible selon l'état physique
   let targetAction: PlayerAction = "idle";
 
   if (justLanded) {
     targetAction = "land";
   } else if (!isGrounded) {
     if (currentAction === "jump") {
-      // Allow jump ascension to complete its keyframes or reach apex
-      if (
-        currentFrameIndex < PLAYER_SPRITE_CONFIG.clips.jump.frameCount - 1 &&
-        velocityY < 60
-      ) {
-        targetAction = "jump";
-      } else {
-        targetAction = "fall";
-      }
+      // Maintient l'ascension du saut jusqu'à la fin des frames ou au sommet de la trajectoire
+      const isAscending = velocityY < 60;
+      const hasRemainingFrames = currentFrameIndex < clips.jump.frameCount - 1;
+
+      targetAction = isAscending && hasRemainingFrames ? "jump" : "fall";
     } else {
-      // In air: if rising sharply (e.g. jump started), play jump; otherwise fall
+      // En l'air : impulsion vers le haut = saut, sinon chute
       targetAction = velocityY < -60 ? "jump" : "fall";
     }
   } else {
-    // Grounded: play landing recovery to completion before running or idling
-    if (
-      currentAction === "land" &&
-      currentFrameIndex < PLAYER_SPRITE_CONFIG.clips.land.frameCount - 1
-    ) {
+    // Au sol : jouer l'animation d'atterrissage complète avant de courir ou d'attendre
+    const isPlayingLand =
+      currentAction === "land" && currentFrameIndex < clips.land.frameCount - 1;
+
+    if (isPlayingLand) {
       targetAction = "land";
     } else if (Math.abs(velocityX) > 15) {
       targetAction = "run";
@@ -51,7 +56,7 @@ export function updateSpriteAnimation(
     }
   }
 
-  // 2. If action changed, reset frame counters
+  // 2. Si l'action change, réinitialisation des compteurs de frame
   let nextAction = targetAction;
   let nextFrameIndex = currentFrameIndex;
   let nextFrameTimer = currentFrameTimer + deltaSeconds;
@@ -62,8 +67,8 @@ export function updateSpriteAnimation(
     nextFrameTimer = 0;
   }
 
-  // 3. Advance frame based on clip FPS configuration
-  const clip = PLAYER_SPRITE_CONFIG.clips[nextAction];
+  // 3. Avancement de la frame selon le FPS configuré pour le clip
+  const clip = clips[nextAction];
   const frameDuration = 1 / clip.fps;
 
   if (nextFrameTimer >= frameDuration) {
@@ -71,11 +76,7 @@ export function updateSpriteAnimation(
     nextFrameIndex += 1;
 
     if (nextFrameIndex >= clip.frameCount) {
-      if (clip.loop) {
-        nextFrameIndex = 0;
-      } else {
-        nextFrameIndex = clip.frameCount - 1;
-      }
+      nextFrameIndex = clip.loop ? 0 : clip.frameCount - 1;
     }
   }
 

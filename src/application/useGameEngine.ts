@@ -8,12 +8,55 @@ import {
 } from "@/domain/game/services/physics";
 
 interface UseGameEngineOptions {
-  onSound?: (type: SoundTrigger) => void;
-  platforms?: readonly Platform[];
-  worldWidth?: number;
-  worldHeight?: number;
+  readonly onSound?: (type: SoundTrigger) => void;
+  readonly platforms?: readonly Platform[];
+  readonly worldWidth?: number;
+  readonly worldHeight?: number;
 }
 
+function isInputElement(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+  );
+}
+
+function isLeftKey(e: KeyboardEvent): boolean {
+  return (
+    e.code === "ArrowLeft" ||
+    e.code === "KeyA" ||
+    e.key === "q" ||
+    e.key === "Q"
+  );
+}
+
+function isRightKey(e: KeyboardEvent): boolean {
+  return (
+    e.code === "ArrowRight" ||
+    e.code === "KeyD" ||
+    e.key === "d" ||
+    e.key === "D"
+  );
+}
+
+function isJumpKey(e: KeyboardEvent): boolean {
+  return (
+    e.code === "Space" ||
+    e.code === "ArrowUp" ||
+    e.code === "KeyW" ||
+    e.key === "z" ||
+    e.key === "Z"
+  );
+}
+
+function isResetKey(e: KeyboardEvent): boolean {
+  return e.key === "r" || e.key === "R";
+}
+
+/**
+ * Hook d'orchestration du moteur de jeu :
+ * Gère les entrées clavier (QWERTY & AZERTY), la synchronisation physique
+ * et le rafraîchissement réactif du canvas.
+ */
 export function useGameEngine({
   onSound,
   platforms,
@@ -67,75 +110,42 @@ export function useGameEngine({
     onSoundRef.current?.("respawn");
   }, []);
 
-  // Keyboard controls
+  // Écouteurs de clavier (support complet AZERTY / QWERTY / Flèches)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+      if (isInputElement(e.target)) return;
 
-      if (
-        e.code === "ArrowLeft" ||
-        e.code === "KeyA" ||
-        e.key === "q" ||
-        e.key === "Q"
-      ) {
-        inputRef.current.left = true;
+      if (isLeftKey(e)) {
+        inputRef.current = { ...inputRef.current, left: true };
       }
-      if (
-        e.code === "ArrowRight" ||
-        e.code === "KeyD" ||
-        e.key === "d" ||
-        e.key === "D"
-      ) {
-        inputRef.current.right = true;
+      if (isRightKey(e)) {
+        inputRef.current = { ...inputRef.current, right: true };
       }
-      if (
-        e.code === "Space" ||
-        e.code === "ArrowUp" ||
-        e.code === "KeyW" ||
-        e.key === "z" ||
-        e.key === "Z"
-      ) {
+      if (isJumpKey(e)) {
         e.preventDefault();
-        if (!inputRef.current.jumpHeld) {
-          inputRef.current.jumpPressed = true;
-        }
-        inputRef.current.jumpHeld = true;
+        const shouldTriggerPress = !inputRef.current.jumpHeld;
+        inputRef.current = {
+          ...inputRef.current,
+          jumpPressed: shouldTriggerPress ? true : inputRef.current.jumpPressed,
+          jumpHeld: true,
+        };
       }
-      if (e.key === "r" || e.key === "R") {
+      if (isResetKey(e)) {
         resetGame();
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (
-        e.code === "ArrowLeft" ||
-        e.code === "KeyA" ||
-        e.key === "q" ||
-        e.key === "Q"
-      ) {
-        inputRef.current.left = false;
+      if (isInputElement(e.target)) return;
+
+      if (isLeftKey(e)) {
+        inputRef.current = { ...inputRef.current, left: false };
       }
-      if (
-        e.code === "ArrowRight" ||
-        e.code === "KeyD" ||
-        e.key === "d" ||
-        e.key === "D"
-      ) {
-        inputRef.current.right = false;
+      if (isRightKey(e)) {
+        inputRef.current = { ...inputRef.current, right: false };
       }
-      if (
-        e.code === "Space" ||
-        e.code === "ArrowUp" ||
-        e.code === "KeyW" ||
-        e.key === "z" ||
-        e.key === "Z"
-      ) {
-        inputRef.current.jumpHeld = false;
+      if (isJumpKey(e)) {
+        inputRef.current = { ...inputRef.current, jumpHeld: false };
       }
     };
 
@@ -148,11 +158,10 @@ export function useGameEngine({
     };
   }, [resetGame]);
 
-  // Game animation loop
+  // Boucle de simulation de jeu (synchronisée sur requestAnimationFrame)
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
-    let renderThrottleTimer = 0;
 
     const loop = (currentTime: number) => {
       const dt = (currentTime - lastTime) / 1000;
@@ -168,14 +177,14 @@ export function useGameEngine({
         (sound: SoundTrigger) => onSoundRef.current?.(sound),
       );
 
-      inputRef.current.jumpPressed = false;
-      stateRef.current = nextState;
+      // Consomme l'impulsion de saut pressée
+      inputRef.current = {
+        ...inputRef.current,
+        jumpPressed: false,
+      };
 
-      renderThrottleTimer += dt;
-      if (renderThrottleTimer >= 0.016) {
-        renderThrottleTimer = 0;
-        setGameState(nextState);
-      }
+      stateRef.current = nextState;
+      setGameState(nextState);
 
       animId = requestAnimationFrame(loop);
     };
